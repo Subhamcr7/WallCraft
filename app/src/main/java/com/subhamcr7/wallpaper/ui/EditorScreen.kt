@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -251,7 +250,7 @@ private fun CropOverlay(
             val w = size.width
             val h = size.height
             val r = Rect(
-                topLeft = Offset(rect.left * w, rect.top * h),
+                offset = Offset(rect.left * w, rect.top * h),
                 size = Size(rect.width * w, rect.height * h)
             )
             val scrim = Color.Black.copy(alpha = 0.45f)
