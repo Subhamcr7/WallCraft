@@ -103,7 +103,7 @@ fun HomeScreen(
                     Text(
                         text = "Categories",
                         style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 4.dp)
                     )
                     Catalog.categories.forEach { cat ->
                         NavigationDrawerItem(
@@ -112,19 +112,19 @@ fun HomeScreen(
                                 selectedCategory = cat
                                 scope.launch { drawerState.close() }
                             },
-                            label = { Text(cat) },
+                            label = { Text(cat, style = MaterialTheme.typography.bodyMedium) },
                             modifier = Modifier
                                 .padding(horizontal = 12.dp)
-                                .height(42.dp)
+                                .height(36.dp)
                         )
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(top = 6.dp))
 
                     Text(
                         text = "Appearance",
                         style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 4.dp)
+                        modifier = Modifier.padding(start = 24.dp, top = 10.dp, bottom = 4.dp)
                     )
                     ThemeRow("Light", ThemeMode.LIGHT, themeMode, onSetTheme)
                     ThemeRow("Dark", ThemeMode.DARK, themeMode, onSetTheme)
