@@ -54,24 +54,56 @@ object WallpaperUtils {
         context: Context,
         bitmap: Bitmap,
         flags: Int,
-        onResult: (Boolean) -> Unit
+        onResult: (Boolean, String?) -> Unit
     ) {
+        val prepared = prepareBitmap(bitmap)
         val main = Handler(Looper.getMainLooper())
         main.post {
-            try {
-                val wm = WallpaperManager.getInstance(context)
-                if (flags and WallpaperManager.FLAG_SYSTEM != 0) {
-                    wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
-                }
-                if (flags and WallpaperManager.FLAG_LOCK != 0) {
-                    wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
-                }
-                onResult(true)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                onResult(false)
+            val wm = WallpaperManager.getInstance(context)
+            var ok = true
+            var lastError: String? = null
+
+            if (flags and WallpaperManager.FLAG_SYSTEM != 0) {
+                val r = trySet(wm, prepared, WallpaperManager.FLAG_SYSTEM)
+                ok = r.first && ok
+                if (!r.first) lastError = r.second
             }
+            if (flags and WallpaperManager.FLAG_LOCK != 0) {
+                val r = trySet(wm, prepared, WallpaperManager.FLAG_LOCK)
+                ok = r.first && ok
+                if (!r.first) lastError = r.second
+            }
+            onResult(ok, lastError)
         }
+    }
+
+    private fun trySet(wm: WallpaperManager, bitmap: Bitmap, flag: Int): Pair<Boolean, String?> {
+        return try {
+            wm.setBitmap(bitmap, null, true, flag)
+            true to null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false to (e.message ?: e.javaClass.simpleName)
+        }
+    }
+
+    private fun prepareBitmap(src: Bitmap): Bitmap {
+        val MAX_DIM = 2160
+        var bmp = src
+        val maxDim = maxOf(bmp.width, bmp.height)
+        if (maxDim > MAX_DIM) {
+            val scale = MAX_DIM.toFloat() / maxDim
+            bmp = Bitmap.createScaledBitmap(
+                bmp,
+                (bmp.width * scale).toInt(),
+                (bmp.height * scale).toInt(),
+                true
+            )
+        }
+        if (bmp.config != Bitmap.Config.ARGB_8888) {
+            bmp = bmp.copy(Bitmap.Config.ARGB_8888, false)
+        }
+        return bmp
     }
 
     fun downloadWallpaper(context: Context, source: String, title: String, onDone: (Boolean) -> Unit) {

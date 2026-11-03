@@ -10,6 +10,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,43 +87,50 @@ fun HomeScreen(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Text(
-                    text = "WallCraft",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 16.dp, bottom = 12.dp)
-                )
-                HorizontalDivider()
-
-                Text(
-                    text = "Categories",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 8.dp)
-                )
-                Catalog.categories.forEach { cat ->
-                    NavigationDrawerItem(
-                        selected = cat == selectedCategory,
-                        onClick = {
-                            selectedCategory = cat
-                            scope.launch { drawerState.close() }
-                        },
-                        label = { Text(cat) },
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = "WallCraft",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 16.dp, bottom = 12.dp)
                     )
+                    HorizontalDivider()
+
+                    Text(
+                        text = "Categories",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 8.dp)
+                    )
+                    Catalog.categories.forEach { cat ->
+                        NavigationDrawerItem(
+                            selected = cat == selectedCategory,
+                            onClick = {
+                                selectedCategory = cat
+                                scope.launch { drawerState.close() }
+                            },
+                            label = { Text(cat) },
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp)
+                                .height(42.dp)
+                        )
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+
+                    Text(
+                        text = "Appearance",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 4.dp)
+                    )
+                    ThemeRow("Light", ThemeMode.LIGHT, themeMode, onSetTheme)
+                    ThemeRow("Dark", ThemeMode.DARK, themeMode, onSetTheme)
+                    ThemeRow("System", ThemeMode.SYSTEM, themeMode, onSetTheme)
+                    Spacer(Modifier.height(16.dp))
                 }
-
-                Spacer(Modifier.weight(1f))
-                HorizontalDivider()
-
-                Text(
-                    text = "Appearance",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 4.dp)
-                )
-                ThemeRow("Light", ThemeMode.LIGHT, themeMode, onSetTheme)
-                ThemeRow("Dark", ThemeMode.DARK, themeMode, onSetTheme)
-                ThemeRow("System", ThemeMode.SYSTEM, themeMode, onSetTheme)
-                Spacer(Modifier.height(16.dp))
             }
         }
     ) {
