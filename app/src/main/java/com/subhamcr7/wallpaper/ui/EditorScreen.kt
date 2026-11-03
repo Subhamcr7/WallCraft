@@ -251,7 +251,7 @@ private fun CropOverlay(
             val h = size.height
             val r = Rect(
                 offset = Offset(rect.left * w, rect.top * h),
-                size = Size(rect.width * w, rect.height * h)
+                size = Size(rect.width() * w, rect.height() * h)
             )
             val scrim = Color.Black.copy(alpha = 0.45f)
             drawRect(color = scrim, topLeft = Offset(0f, 0f), size = Size(w, r.top))
