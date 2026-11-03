@@ -80,7 +80,7 @@ fun DetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(wallpaper.title) },
+                title = { Text(wallpaper.title.ifBlank { "Wallpaper" }) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")

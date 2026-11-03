@@ -88,9 +88,14 @@ fun EditorScreen(
             val finalBmp = withContext(Dispatchers.IO) {
                 buildFinalBitmap(bmp!!, rotation, flipH, flipV, cropRect.takeIf { cropEnabled })
             }
-            WallpaperUtils.setBitmapWallpaper(context, finalBmp, flag)
-            message = "Wallpaper set"
-            onBack()
+            WallpaperUtils.setBitmapWallpaper(context, finalBmp, flag) { ok ->
+                if (ok) {
+                    message = "Wallpaper set"
+                    onBack()
+                } else {
+                    message = "Could not set wallpaper"
+                }
+            }
         }
     }
 

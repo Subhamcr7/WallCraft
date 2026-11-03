@@ -291,22 +291,13 @@ private fun WallpaperCard(wallpaper: Wallpaper, onClick: () -> Unit) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column {
-            AsyncImage(
-                model = wallpaper.source,
-                contentDescription = wallpaper.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.75f)
-            )
-            Text(
-                text = wallpaper.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                modifier = Modifier.padding(12.dp)
-            )
-        }
+        AsyncImage(
+            model = wallpaper.source,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(0.75f)
+        )
     }
 }

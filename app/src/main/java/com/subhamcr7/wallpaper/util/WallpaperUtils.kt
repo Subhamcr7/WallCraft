@@ -8,6 +8,8 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import java.io.File
 import java.io.InputStream
@@ -48,12 +50,26 @@ object WallpaperUtils {
         null
     }
 
-    fun setBitmapWallpaper(context: Context, bitmap: Bitmap, flags: Int) {
-        executor.execute {
+    fun setBitmapWallpaper(
+        context: Context,
+        bitmap: Bitmap,
+        flags: Int,
+        onResult: (Boolean) -> Unit
+    ) {
+        val main = Handler(Looper.getMainLooper())
+        main.post {
             try {
-                WallpaperManager.getInstance(context).setBitmap(bitmap, null, true, flags)
+                val wm = WallpaperManager.getInstance(context)
+                if (flags and WallpaperManager.FLAG_SYSTEM != 0) {
+                    wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                }
+                if (flags and WallpaperManager.FLAG_LOCK != 0) {
+                    wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
+                }
+                onResult(true)
             } catch (e: Exception) {
                 e.printStackTrace()
+                onResult(false)
             }
         }
     }
