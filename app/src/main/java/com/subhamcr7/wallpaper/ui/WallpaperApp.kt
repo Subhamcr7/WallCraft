@@ -1,5 +1,6 @@
 package com.subhamcr7.wallpaper.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +37,15 @@ fun WallpaperApp() {
 
     WallpaperTheme(darkTheme = darkTheme) {
         val wallpaper = selectedId?.let { id -> wallpapers.find { it.id == id } }
+
+        val canGoBack = editing != null || selectedId != null
+        BackHandler(enabled = canGoBack) {
+            if (editing != null) {
+                editing = null
+            } else {
+                selectedId = null
+            }
+        }
 
         when {
             editing != null -> {

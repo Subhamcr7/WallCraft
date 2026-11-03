@@ -105,18 +105,25 @@ fun HomeScreen(
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 4.dp)
                     )
-                    Catalog.categories.forEach { cat ->
-                        NavigationDrawerItem(
-                            selected = cat == selectedCategory,
-                            onClick = {
-                                selectedCategory = cat
-                                scope.launch { drawerState.close() }
-                            },
-                            label = { Text(cat, style = MaterialTheme.typography.bodyMedium) },
+                    Catalog.categories.chunked(2).forEach { pair ->
+                        Row(
                             modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(horizontal = 12.dp)
-                                .height(34.dp)
-                        )
+                        ) {
+                            pair.forEach { cat ->
+                                CategoryCell(
+                                    label = cat,
+                                    selected = cat == selectedCategory,
+                                    onClick = {
+                                        selectedCategory = cat
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(top = 6.dp))
@@ -171,6 +178,35 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryCell(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .padding(4.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .clickable { onClick() }
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
     }
 }
 

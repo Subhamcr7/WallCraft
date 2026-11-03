@@ -1,7 +1,6 @@
 package com.subhamcr7.wallpaper.ui
 
 import android.app.WallpaperManager
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,8 +42,6 @@ fun DetailScreen(
 ) {
     val context = LocalContext.current
     var message by remember { mutableStateOf<String?>(null) }
-
-    BackHandler { onBack() }
 
     val isDevicePhoto = wallpaper.source.startsWith("content://")
 

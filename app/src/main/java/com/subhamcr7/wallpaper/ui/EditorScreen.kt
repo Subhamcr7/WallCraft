@@ -3,7 +3,6 @@ package com.subhamcr7.wallpaper.ui
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.RectF
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -66,8 +65,6 @@ fun EditorScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    BackHandler { onBack() }
 
     var base by remember { mutableStateOf<Bitmap?>(null) }
     var rotation by remember { mutableIntStateOf(0) }

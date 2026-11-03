@@ -3,6 +3,7 @@ package com.subhamcr7.wallpaper.util
 import android.app.WallpaperManager
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -11,6 +12,8 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import androidx.core.content.FileProvider
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -60,20 +63,25 @@ object WallpaperUtils {
         val main = Handler(Looper.getMainLooper())
         main.post {
             val wm = WallpaperManager.getInstance(context)
-            var ok = true
+            var anyOk = false
             var lastError: String? = null
 
             if (flags and WallpaperManager.FLAG_SYSTEM != 0) {
                 val r = trySet(wm, prepared, WallpaperManager.FLAG_SYSTEM)
-                ok = r.first && ok
-                if (!r.first) lastError = r.second
+                if (r.first) anyOk = true else lastError = r.second
             }
             if (flags and WallpaperManager.FLAG_LOCK != 0) {
                 val r = trySet(wm, prepared, WallpaperManager.FLAG_LOCK)
-                ok = r.first && ok
-                if (!r.first) lastError = r.second
+                if (r.first) anyOk = true else lastError = r.second
             }
-            onResult(ok, lastError)
+
+            if (anyOk) {
+                onResult(true, null)
+            } else {
+                // Fallback: hand the image to the system wallpaper setter.
+                val launched = launchSystemSetter(context, prepared)
+                onResult(launched, if (launched) "Opening system setter" else lastError)
+            }
         }
     }
 
@@ -84,6 +92,26 @@ object WallpaperUtils {
         } catch (e: Exception) {
             e.printStackTrace()
             false to (e.message ?: e.javaClass.simpleName)
+        }
+    }
+
+    private fun launchSystemSetter(context: Context, bitmap: Bitmap): Boolean {
+        return try {
+            val file = File(context.cacheDir, "wallpaper_set.jpg")
+            val out = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
+            file.writeBytes(out.toByteArray())
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val intent = Intent(Intent.ACTION_ATTACH_DATA).apply {
+                setDataAndType(uri, "image/jpeg")
+                putExtra("mimeType", "image/jpeg")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 
