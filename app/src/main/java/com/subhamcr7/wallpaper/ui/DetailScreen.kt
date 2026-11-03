@@ -46,7 +46,7 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            WallpaperUtils.downloadWallpaper(context, wallpaper.url, wallpaper.title) { ok ->
+            WallpaperUtils.downloadWallpaper(context, wallpaper.source, wallpaper.title) { ok ->
                 message = if (ok) "Saved to Pictures/Wallpapers" else "Download failed"
             }
         } else {
@@ -56,7 +56,7 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
 
     fun requestDownload() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            WallpaperUtils.downloadWallpaper(context, wallpaper.url, wallpaper.title) { ok ->
+            WallpaperUtils.downloadWallpaper(context, wallpaper.source, wallpaper.title) { ok ->
                 message = if (ok) "Saved to Pictures/Wallpapers" else "Download failed"
             }
         } else {
@@ -64,7 +64,7 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
                 context, Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) == PackageManager.PERMISSION_GRANTED
             if (granted) {
-                WallpaperUtils.downloadWallpaper(context, wallpaper.url, wallpaper.title) { ok ->
+                WallpaperUtils.downloadWallpaper(context, wallpaper.source, wallpaper.title) { ok ->
                     message = if (ok) "Saved to Pictures/Wallpapers" else "Download failed"
                 }
             } else {
@@ -92,7 +92,7 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             AsyncImage(
-                model = wallpaper.url,
+                model = wallpaper.source,
                 contentDescription = wallpaper.title,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
@@ -114,12 +114,12 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Button(onClick = {
-                    WallpaperUtils.setWallpaper(context, wallpaper.url, WallpaperManager.FLAG_SYSTEM)
+                    WallpaperUtils.setWallpaper(context, wallpaper.source, WallpaperManager.FLAG_SYSTEM)
                 }) {
                     Text("Set Home")
                 }
                 Button(onClick = {
-                    WallpaperUtils.setWallpaper(context, wallpaper.url, WallpaperManager.FLAG_LOCK)
+                    WallpaperUtils.setWallpaper(context, wallpaper.source, WallpaperManager.FLAG_LOCK)
                 }) {
                     Text("Set Lock")
                 }
@@ -131,7 +131,7 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
             ) {
                 FilledTonalButton(onClick = {
                     WallpaperUtils.setWallpaper(
-                        context, wallpaper.url,
+                        context, wallpaper.source,
                         WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
                     )
                 }) {

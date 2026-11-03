@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import java.io.File
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -18,14 +19,24 @@ object WallpaperUtils {
 
     private val executor = Executors.newFixedThreadPool(2)
 
-    fun setWallpaper(context: Context, url: String, flags: Int) {
+    private const val ASSET_PREFIX = "file:///android_asset/"
+
+    private fun openStream(context: Context, source: String): InputStream {
+        return if (source.startsWith(ASSET_PREFIX)) {
+            context.assets.open(source.removePrefix(ASSET_PREFIX))
+        } else {
+            val conn = URL(source).openConnection() as HttpURLConnection
+            conn.connectTimeout = 15000
+            conn.readTimeout = 15000
+            conn.requestMethod = "GET"
+            conn.inputStream
+        }
+    }
+
+    fun setWallpaper(context: Context, source: String, flags: Int) {
         executor.execute {
             try {
-                val conn = URL(url).openConnection() as HttpURLConnection
-                conn.connectTimeout = 15000
-                conn.readTimeout = 15000
-                conn.requestMethod = "GET"
-                conn.inputStream.use { input ->
+                openStream(context, source).use { input ->
                     val wm = WallpaperManager.getInstance(context)
                     wm.setStream(input, null, true, flags)
                 }
@@ -35,14 +46,10 @@ object WallpaperUtils {
         }
     }
 
-    fun downloadWallpaper(context: Context, url: String, title: String, onDone: (Boolean) -> Unit) {
+    fun downloadWallpaper(context: Context, source: String, title: String, onDone: (Boolean) -> Unit) {
         executor.execute {
             try {
-                val conn = URL(url).openConnection() as HttpURLConnection
-                conn.connectTimeout = 15000
-                conn.readTimeout = 15000
-                conn.requestMethod = "GET"
-                val bytes = conn.inputStream.use { it.readBytes() }
+                val bytes = openStream(context, source).use { it.readBytes() }
 
                 val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
                 val displayName = "${title.replace(Regex("[^A-Za-z0-9]+"), "_")}_$stamp.jpg"
