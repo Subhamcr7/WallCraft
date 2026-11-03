@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -69,12 +70,18 @@ object WallpaperUtils {
                     }
                     uri != null
                 } else {
-                    val legacy = MediaStore.Images.Media.insertImage(
-                        context.contentResolver,
-                        bytes,
-                        displayName,
-                        title
-                    )
+                    val file = File(context.cacheDir, displayName)
+                    file.writeBytes(bytes)
+                    val legacy = try {
+                        MediaStore.Images.Media.insertImage(
+                            context.contentResolver,
+                            file.absolutePath,
+                            displayName,
+                            title
+                        )
+                    } finally {
+                        file.delete()
+                    }
                     legacy != null
                 }
 

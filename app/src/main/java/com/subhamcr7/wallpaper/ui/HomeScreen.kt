@@ -1,6 +1,5 @@
 package com.subhamcr7.wallpaper.ui
 
-import androidx.compose.foundation.aspectRatio
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
