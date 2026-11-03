@@ -115,7 +115,7 @@ fun HomeScreen(
                             label = { Text(cat, style = MaterialTheme.typography.bodyMedium) },
                             modifier = Modifier
                                 .padding(horizontal = 12.dp)
-                                .height(36.dp)
+                                .height(34.dp)
                         )
                     }
 

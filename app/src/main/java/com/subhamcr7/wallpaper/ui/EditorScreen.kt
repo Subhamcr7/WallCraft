@@ -3,6 +3,7 @@ package com.subhamcr7.wallpaper.ui
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.RectF
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -66,12 +67,15 @@ fun EditorScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    BackHandler { onBack() }
+
     var base by remember { mutableStateOf<Bitmap?>(null) }
     var rotation by remember { mutableIntStateOf(0) }
     var flipH by remember { mutableStateOf(false) }
     var flipV by remember { mutableStateOf(false) }
     var cropEnabled by remember { mutableStateOf(false) }
     var cropRect by remember { mutableStateOf(RectF(0f, 0f, 1f, 1f)) }
+    var cropApplied by remember { mutableStateOf<RectF?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(wallpaper.source) {
@@ -80,15 +84,17 @@ fun EditorScreen(
 
     val bmp = base
     val transformed = bmp?.let { buildTransformed(it, rotation, flipH, flipV) }
+    val display = if (bmp != null && cropApplied != null) {
+        buildFinalBitmap(bmp, rotation, flipH, flipV, cropApplied)
+    } else {
+        transformed
+    }
 
     fun applyAndSet() {
-        if (transformed == null) return
+        if (display == null) return
         scope.launch {
             message = "Applying…"
-            val finalBmp = withContext(Dispatchers.IO) {
-                buildFinalBitmap(bmp!!, rotation, flipH, flipV, cropRect.takeIf { cropEnabled })
-            }
-            WallpaperUtils.setBitmapWallpaper(context, finalBmp, flag) { ok, error ->
+            WallpaperUtils.setBitmapWallpaper(context, display!!, flag) { ok, error ->
                 if (ok) {
                     message = "Wallpaper set"
                     onBack()
@@ -117,7 +123,7 @@ fun EditorScreen(
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            if (transformed == null) {
+            if (display == null) {
                 CircularProgressIndicator()
                 return@Box
             }
@@ -128,11 +134,11 @@ fun EditorScreen(
                         .fillMaxWidth()
                         .weight(1f)
                         .padding(16.dp)
-                        .aspectRatio(transformed.width.toFloat() / transformed.height)
+                        .aspectRatio(display.width.toFloat() / display.height)
                         .clip(RoundedCornerShape(12.dp))
                 ) {
                     Image(
-                        bitmap = transformed.asImageBitmap(),
+                        bitmap = display.asImageBitmap(),
                         contentDescription = null,
                         contentScale = ContentScale.FillBounds,
                         modifier = Modifier.fillMaxSize()
@@ -192,13 +198,23 @@ fun EditorScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
-                    Button(
-                        onClick = {
-                            cropEnabled = !cropEnabled
-                            if (cropEnabled) cropRect = RectF(0f, 0f, 1f, 1f)
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) { Text(if (cropEnabled) "Done Cropping" else "Crop") }
+                    if (cropEnabled) {
+                        Button(
+                            onClick = {
+                                cropApplied = cropRect
+                                cropEnabled = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Done Cropping") }
+                    } else {
+                        Button(
+                            onClick = {
+                                cropEnabled = true
+                                cropRect = cropApplied ?: RectF(0f, 0f, 1f, 1f)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) { Text(if (cropApplied != null) "Redo Crop" else "Crop") }
+                    }
                     Button(
                         onClick = { applyAndSet() },
                         modifier = Modifier.weight(1f)
