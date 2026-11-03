@@ -1,6 +1,7 @@
 package com.subhamcr7.wallpaper.data
 
 import android.content.Context
+import org.json.JSONObject
 
 data class Wallpaper(
     val id: String,
@@ -12,7 +13,11 @@ data class Wallpaper(
 
 object Catalog {
 
-    val categories = listOf("All", "My Pins", "Nature", "City", "Abstract", "Animals", "Dark", "Space")
+    val devicePhotosCategory = "Device Photos"
+
+    val categories = listOf(
+        "All", "Nature", "City", "Abstract", "Animals", "Dark", "Space", devicePhotosCategory
+    )
 
     private fun remote(id: String, title: String, cat: String, accent: Long) =
         Wallpaper(id, title, cat, accent, "https://picsum.photos/id/$id/1080/1920")
@@ -78,20 +83,38 @@ object Catalog {
     private val remoteAll = nature + city + abstract + animals + dark + space
 
     fun load(context: Context): List<Wallpaper> {
-        val pins = runCatching { context.assets.list("wallpapers") ?: emptyArray() }
+        val catJson = runCatching {
+            context.assets.open("wallpapers_categories.json")
+                .bufferedReader()
+                .use { it.readText() }
+        }.getOrDefault("{}")
+
+        val catObj = runCatching { JSONObject(catJson) }.getOrNull()
+
+        fun catFor(fn: String): String =
+            catObj?.optString(fn, "")?.takeIf { it.isNotEmpty() } ?: "Abstract"
+
+        val assetFiles = runCatching { context.assets.list("wallpapers") ?: emptyArray() }
             .getOrDefault(emptyArray())
             .filter { it.endsWith(".jpg") || it.endsWith(".gif") }
-            .map { fn ->
-                val title = fn.substringBeforeLast('.').take(12)
-                Wallpaper(
-                    id = "pin_$fn",
-                    title = title,
-                    category = "My Pins",
-                    accent = 0xFF3F51B5,
-                    source = "file:///android_asset/wallpapers/$fn"
-                )
+
+        val pins = assetFiles.map { fn ->
+            Wallpaper(
+                id = "pin_$fn",
+                title = fn.substringBeforeLast('.').take(12),
+                category = catFor(fn),
+                accent = 0xFF3F51B5,
+                source = "file:///android_asset/wallpapers/$fn"
+            )
+        }
+
+        val named = pins.groupBy { it.category }
+            .flatMap { (cat, list) ->
+                list.sortedBy { it.id }
+                    .mapIndexed { i, wp -> wp.copy(title = "$cat ${i + 1}") }
             }
-        return pins + remoteAll
+
+        return named + remoteAll
     }
 
     fun forCategory(all: List<Wallpaper>, category: String): List<Wallpaper> =

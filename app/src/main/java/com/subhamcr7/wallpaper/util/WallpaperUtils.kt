@@ -3,6 +3,9 @@ package com.subhamcr7.wallpaper.util
 import android.app.WallpaperManager
 import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -20,26 +23,35 @@ object WallpaperUtils {
     private val executor = Executors.newFixedThreadPool(2)
 
     private const val ASSET_PREFIX = "file:///android_asset/"
+    private const val CONTENT_PREFIX = "content://"
 
     private fun openStream(context: Context, source: String): InputStream {
-        return if (source.startsWith(ASSET_PREFIX)) {
-            context.assets.open(source.removePrefix(ASSET_PREFIX))
-        } else {
-            val conn = URL(source).openConnection() as HttpURLConnection
-            conn.connectTimeout = 15000
-            conn.readTimeout = 15000
-            conn.requestMethod = "GET"
-            conn.inputStream
+        return when {
+            source.startsWith(ASSET_PREFIX) ->
+                context.assets.open(source.removePrefix(ASSET_PREFIX))
+            source.startsWith(CONTENT_PREFIX) ->
+                context.contentResolver.openInputStream(Uri.parse(source))!!
+            else -> {
+                val conn = URL(source).openConnection() as HttpURLConnection
+                conn.connectTimeout = 15000
+                conn.readTimeout = 15000
+                conn.requestMethod = "GET"
+                conn.inputStream
+            }
         }
     }
 
-    fun setWallpaper(context: Context, source: String, flags: Int) {
+    fun decodeBitmap(context: Context, source: String): Bitmap? = try {
+        openStream(context, source).use { BitmapFactory.decodeStream(it) }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+
+    fun setBitmapWallpaper(context: Context, bitmap: Bitmap, flags: Int) {
         executor.execute {
             try {
-                openStream(context, source).use { input ->
-                    val wm = WallpaperManager.getInstance(context)
-                    wm.setStream(input, null, true, flags)
-                }
+                WallpaperManager.getInstance(context).setBitmap(bitmap, null, true, flags)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

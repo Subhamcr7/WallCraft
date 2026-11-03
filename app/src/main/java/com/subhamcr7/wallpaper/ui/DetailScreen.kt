@@ -1,20 +1,18 @@
 package com.subhamcr7.wallpaper.ui
 
-import android.Manifest
 import android.app.WallpaperManager
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -31,19 +29,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.subhamcr7.wallpaper.data.Wallpaper
 import com.subhamcr7.wallpaper.util.WallpaperUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
+fun DetailScreen(
+    wallpaper: Wallpaper,
+    onBack: () -> Unit,
+    onSet: (Int) -> Unit
+) {
     val context = LocalContext.current
     var message by remember { mutableStateOf<String?>(null) }
 
-    val storagePermission = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
+    val isDevicePhoto = wallpaper.source.startsWith("content://")
+
+    val storagePermission = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
             WallpaperUtils.downloadWallpaper(context, wallpaper.source, wallpaper.title) { ok ->
@@ -55,20 +58,21 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
     }
 
     fun requestDownload() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             WallpaperUtils.downloadWallpaper(context, wallpaper.source, wallpaper.title) { ok ->
                 message = if (ok) "Saved to Pictures/Wallpapers" else "Download failed"
             }
         } else {
-            val granted = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
+            val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
             if (granted) {
                 WallpaperUtils.downloadWallpaper(context, wallpaper.source, wallpaper.title) { ok ->
                     message = if (ok) "Saved to Pictures/Wallpapers" else "Download failed"
                 }
             } else {
-                storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                storagePermission.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
             }
         }
     }
@@ -79,7 +83,7 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
                 title = { Text(wallpaper.title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Text("Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -113,14 +117,10 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(16.dp)
             ) {
-                Button(onClick = {
-                    WallpaperUtils.setWallpaper(context, wallpaper.source, WallpaperManager.FLAG_SYSTEM)
-                }) {
+                Button(onClick = { onSet(WallpaperManager.FLAG_SYSTEM) }) {
                     Text("Set Home")
                 }
-                Button(onClick = {
-                    WallpaperUtils.setWallpaper(context, wallpaper.source, WallpaperManager.FLAG_LOCK)
-                }) {
+                Button(onClick = { onSet(WallpaperManager.FLAG_LOCK) }) {
                     Text("Set Lock")
                 }
             }
@@ -130,15 +130,14 @@ fun DetailScreen(wallpaper: Wallpaper, onBack: () -> Unit) {
                 modifier = Modifier.padding(bottom = 24.dp)
             ) {
                 FilledTonalButton(onClick = {
-                    WallpaperUtils.setWallpaper(
-                        context, wallpaper.source,
-                        WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
-                    )
+                    onSet(WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK)
                 }) {
                     Text("Set Both")
                 }
-                OutlinedButton(onClick = { requestDownload() }) {
-                    Text("Download")
+                if (!isDevicePhoto) {
+                    OutlinedButton(onClick = { requestDownload() }) {
+                        Text("Download")
+                    }
                 }
             }
         }
