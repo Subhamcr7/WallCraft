@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -36,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -77,13 +79,14 @@ fun EditorScreen(
     }
 
     val bmp = base
+    val transformed = bmp?.let { buildTransformed(it, rotation, flipH, flipV) }
 
     fun applyAndSet() {
-        if (bmp == null) return
+        if (transformed == null) return
         scope.launch {
             message = "Applying…"
             val finalBmp = withContext(Dispatchers.IO) {
-                buildFinalBitmap(bmp, rotation, flipH, flipV, cropRect.takeIf { cropEnabled })
+                buildFinalBitmap(bmp!!, rotation, flipH, flipV, cropRect.takeIf { cropEnabled })
             }
             WallpaperUtils.setBitmapWallpaper(context, finalBmp, flag)
             message = "Wallpaper set"
@@ -107,16 +110,12 @@ fun EditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+            contentAlignment = Alignment.Center
         ) {
-            if (bmp == null) {
-                androidx.compose.material3.CircularProgressIndicator()
+            if (transformed == null) {
+                CircularProgressIndicator()
                 return@Box
             }
-
-            val swap = rotation % 180 != 0
-            val dispW = if (swap) bmp.height else bmp.width
-            val dispH = if (swap) bmp.width else bmp.height
 
             Column(modifier = Modifier.fillMaxSize()) {
                 Box(
@@ -124,11 +123,11 @@ fun EditorScreen(
                         .fillMaxWidth()
                         .weight(1f)
                         .padding(16.dp)
-                        .aspectRatio(dispW.toFloat() / dispH)
+                        .aspectRatio(transformed.width.toFloat() / transformed.height)
                         .clip(RoundedCornerShape(12.dp))
                 ) {
                     Image(
-                        bitmap = bmp.asImageBitmap(),
+                        bitmap = transformed.asImageBitmap(),
                         contentDescription = null,
                         contentScale = ContentScale.FillBounds,
                         modifier = Modifier.fillMaxSize()
@@ -137,7 +136,7 @@ fun EditorScreen(
                         CropOverlay(
                             rect = cropRect,
                             onCropChange = { cropRect = it },
-                            modifier = Modifier.matchParentSize()
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
@@ -246,7 +245,7 @@ private fun CropOverlay(
             )
         }
     ) {
-        Canvas(modifier = Modifier.matchParentSize()) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
             val r = Rect(
@@ -265,6 +264,17 @@ private fun CropOverlay(
                 topLeft = r.topLeft,
                 size = r.size
             )
+
+            // rule-of-thirds grid inside the crop area
+            val gridColor = Color.White.copy(alpha = 0.55f)
+            val stroke = 1.dp.toPx()
+            for (i in 1..2) {
+                val x = r.left + r.width * i / 3f
+                drawLine(gridColor, Offset(x, r.top), Offset(x, r.bottom), strokeWidth = stroke)
+                val y = r.top + r.height * i / 3f
+                drawLine(gridColor, Offset(r.left, y), Offset(r.right, y), strokeWidth = stroke)
+            }
+
             drawCircle(
                 color = Color.White,
                 radius = 7.dp.toPx(),
@@ -283,12 +293,11 @@ private fun clampCrop(rect: RectF): RectF {
     return RectF(left, top, right, bottom)
 }
 
-private fun buildFinalBitmap(
+private fun buildTransformed(
     base: Bitmap,
     rotation: Int,
     flipH: Boolean,
-    flipV: Boolean,
-    crop: RectF?
+    flipV: Boolean
 ): Bitmap {
     var bmp = base
 
@@ -303,6 +312,18 @@ private fun buildFinalBitmap(
         m.postRotate(rotation.toFloat())
         bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
     }
+
+    return bmp
+}
+
+private fun buildFinalBitmap(
+    base: Bitmap,
+    rotation: Int,
+    flipH: Boolean,
+    flipV: Boolean,
+    crop: RectF?
+): Bitmap {
+    var bmp = buildTransformed(base, rotation, flipH, flipV)
 
     if (crop != null) {
         val width = bmp.width
