@@ -1,2 +1,7 @@
 Pins
 .omo/
+.gradle/
+build/
+app/build/
+/build
+*.html
