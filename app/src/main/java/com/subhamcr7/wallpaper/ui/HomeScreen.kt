@@ -76,10 +76,11 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     wallpapers: List<Wallpaper>,
     themeMode: ThemeMode,
+    selectedCategory: String,
+    onSelectCategory: (String) -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
     onOpen: (Wallpaper) -> Unit
 ) {
-    var selectedCategory by rememberSaveable { mutableStateOf("All") }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -116,7 +117,7 @@ fun HomeScreen(
                                     label = cat,
                                     selected = cat == selectedCategory,
                                     onClick = {
-                                        selectedCategory = cat
+                                        onSelectCategory(cat)
                                         scope.launch { drawerState.close() }
                                     },
                                     modifier = Modifier.weight(1f)

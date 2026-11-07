@@ -22,6 +22,7 @@ fun WallpaperApp() {
 
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var editing by remember { mutableStateOf<Pair<Wallpaper, Int>?>(null) }
+    var selectedCategory by rememberSaveable { mutableStateOf("All") }
 
     var themeMode by remember { mutableStateOf(ThemePrefs.getMode(context)) }
     fun setTheme(mode: ThemeMode) {
@@ -63,6 +64,8 @@ fun WallpaperApp() {
                 HomeScreen(
                     wallpapers = wallpapers,
                     themeMode = themeMode,
+                    selectedCategory = selectedCategory,
+                    onSelectCategory = { selectedCategory = it },
                     onSetTheme = ::setTheme,
                     onOpen = { selectedId = it.id }
                 )
